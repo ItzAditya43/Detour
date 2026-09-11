@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1.0/policyconfig.dtd">
+<policyconfig>
+  <vendor>detour</vendor>
+
+  <!--
+    Optional. Without this file pkexec still works, but the prompt is generic
+    and appears on every start/stop. Installing it gives a message that says
+    what is actually being changed, and auth_admin_keep caches the
+    authorisation for a few minutes so starting and stopping is not two prompts.
+
+    Install with:
+      sudo install -Dm644 packaging/dev.local.detour.policy \
+        /usr/share/polkit-1/actions/dev.local.detour.policy
+
+    The path in annotate must match where dns-helper actually lives.
+  -->
+  <action id="dev.local.detour.run-helper">
+    <description>Run the detour resolver helper</description>
+    <message>Authentication is required to change system DNS or network routing for Detour. Your original /etc/resolv.conf is backed up and restored when you stop.</message>
+    <icon_name>network-wired</icon_name>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/local/bin/dns-helper</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
+  </action>
+</policyconfig>

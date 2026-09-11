@@ -1,0 +1,1 @@
+{"default":{"identifier":"default","description":"Core permissions for the Detour control panel. Privileged work happens in the helper process, not here, so no extra plugin permissions are needed.","local":true,"windows":["main"],"permissions":["core:default"]}}

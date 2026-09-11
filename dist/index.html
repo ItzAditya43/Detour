@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detour</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"></span>
+      <div>
+        <h1>Detour</h1>
+        <p class="sub">Encrypted DNS for the whole system, and a tunnel for the apps you choose</p>
+      </div>
+    </div>
+    <div class="status-block">
+      <div id="status-pill" class="pill pill-off" title="System-wide DNS-over-HTTPS">
+        <span class="dot"></span><span id="status-text">Checking…</span>
+      </div>
+      <div id="hdr-tunnel" class="pill pill-off" title="Per-app tunnel">
+        <span class="dot"></span><span id="hdr-tunnel-text">Tunnel down</span>
+      </div>
+    </div>
+  </header>
+
+  <div id="banner" class="banner" hidden></div>
+
+  <div class="shell">
+    <nav class="sidebar" aria-label="Sections">
+      <button class="nav-item nav-active" data-page="overview">Overview</button>
+      <button class="nav-item" data-page="tunnel">App tunnel</button>
+      <button class="nav-item" data-page="diagnose">Diagnose</button>
+      <button class="nav-item" data-page="profiles">Profiles</button>
+      <button class="nav-item" data-page="settings">Settings</button>
+      <button class="nav-item" data-page="about">Details</button>
+    </nav>
+
+    <main class="content">
+      <!-- ===================== overview ===================== -->
+      <section id="page-overview" class="page page-grid">
+       <div class="col-main">
+        <div class="card feature">
+          <div class="feature-text">
+            <h2>DNS protection</h2>
+            <p class="hint">
+              Every lookup on this machine goes over encrypted DNS (DoH) instead of your
+              network's resolver. Browsers, games and everything else are covered
+              automatically. Local names like <code>.lan</code> stay on your network.
+            </p>
+          </div>
+          <button id="toggle-btn" class="btn btn-primary" disabled>Start protection</button>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><span id="stat-queries">0</span><label>queries</label></div>
+          <div class="stat"><span id="stat-cache">0</span><label>cached</label></div>
+          <div class="stat"><span id="stat-doh">0</span><label>via DoH</label></div>
+          <div class="stat"><span id="stat-local">0</span><label>via local</label></div>
+        </div>
+
+        <div class="card grow-card">
+          <h3 class="sub-h">Live lookups</h3>
+          <div id="query-log" class="log">
+            <p class="empty">No queries yet. Start protection to see live resolution.</p>
+          </div>
+        </div>
+       </div>
+
+       <div class="col-side">
+        <div class="card">
+          <div class="side-head">
+            <h2>App tunnel</h2>
+            <div id="ov-tunnel-pill" class="pill pill-off"><span class="dot"></span><span id="ov-tunnel-text">Tunnel down</span></div>
+          </div>
+          <p class="hint">Only the apps you pick use the tunnel; everything else keeps its normal speed.</p>
+          <button id="ov-tunnel-toggle" class="btn btn-primary btn-block">Start tunnel</button>
+        </div>
+        <div class="card">
+          <div class="side-head">
+            <h2>Filter bypass</h2>
+            <div id="ov-filter-pill" class="pill pill-off"><span class="dot"></span><span id="ov-filter-text">Off</span></div>
+          </div>
+          <p class="hint">Unblocks sites your network filters by the site name (like YouTube Restricted Mode) — no VPN, full speed. Works with Chromium-family browsers.</p>
+          <button id="ov-filter-toggle" class="btn btn-primary btn-block">Start filter bypass</button>
+          <div id="ov-filter-apps" class="app-list compact" style="margin-top:10px"></div>
+          <label class="choice" style="margin-top:10px">
+            <input type="checkbox" id="filter-allapps" />
+            <span><strong>Cover every app, not just browsers</strong><br />
+              <small>Redirects HTTPS from apps you launch in the App tunnel list, so
+              they need no proxy setting. Asks for your password once.</small></span>
+          </label>
+        </div>
+
+        <div class="card grow-card">
+          <h3 class="sub-h">Apps</h3>
+          <div id="ov-apps" class="app-list compact"></div>
+          <button class="btn btn-ghost btn-sm link-tunnel">Manage apps →</button>
+        </div>
+       </div>
+      </section>
+
+      <!-- ===================== tunnel ===================== -->
+      <section id="page-tunnel" class="page page-grid" hidden>
+       <div class="col-main">
+        <div class="card feature">
+          <div class="feature-text">
+            <h2>App tunnel</h2>
+            <p class="hint">
+              Sends <strong>only the apps you launch from here</strong> through a WireGuard
+              tunnel. The rest of the machine keeps its normal connection and speed.
+              If the tunnel drops, those apps lose connectivity instead of silently
+              falling back.
+            </p>
+          </div>
+          <div class="feature-side">
+            <div id="tunnel-pill" class="pill pill-off"><span class="dot"></span><span id="tunnel-text">Tunnel down</span></div>
+            <button id="tunnel-toggle" class="btn btn-primary">Start tunnel</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="sub-h">Apps</h3>
+          <p class="hint">Not running yet? <strong>Launch</strong> starts it in the tunnel. Already open? <strong>Move into tunnel</strong> brings it in without closing it.</p>
+          <div id="tunnel-apps" class="app-list"></div>
+          <div id="suggest-wrap" hidden>
+            <p class="hint">Found on this system — click to add:</p>
+            <div id="suggestions" class="chips"></div>
+          </div>
+          <div class="row add-app">
+            <input id="app-name" type="text" placeholder="Name, e.g. Firefox" />
+            <input id="app-command" type="text" placeholder="Command, e.g. firefox  or  flatpak run org.x.App" />
+            <button id="app-add" class="btn btn-ghost btn-sm">Add app</button>
+          </div>
+        </div>
+
+       </div>
+       <div class="col-side">
+          <div class="card">
+            <h3 class="sub-h">Tunnel config</h3>
+            <p id="tunnel-config-state" class="hint"></p>
+            <button id="warp-generate" class="btn btn-sm">Generate free Cloudflare WARP config</button>
+            <p id="wgcf-missing" class="hint" hidden>
+              Needs <code>wgcf</code>: run <code>yay -S wgcf</code> in a terminal, then reopen this page.
+            </p>
+            <p class="hint">…or use any WireGuard config (from your VPN provider, a friend's server, etc.):</p>
+            <input id="wg-file" type="file" accept=".conf,text/plain" hidden />
+            <button id="wg-pick" class="btn btn-ghost btn-sm">Choose .conf file…</button>
+            <details class="custom-prov">
+              <summary>or type a path</summary>
+              <div class="row">
+                <input id="wg-import-path" type="text" placeholder="/path/to/wg0.conf" />
+                <button id="wg-import" class="btn btn-ghost btn-sm">Import</button>
+              </div>
+            </details>
+          </div>
+
+          <div class="card">
+            <h3 class="sub-h">Verify</h3>
+            <button id="exit-check" class="btn btn-ghost btn-sm">Check exit IP</button>
+            <dl id="exit-result" class="details" hidden>
+              <dt>Direct</dt><dd id="exit-direct">—</dd>
+              <dt>In tunnel</dt><dd id="exit-tunnel">—</dd>
+              <dt>WARP</dt><dd id="exit-warp">—</dd>
+            </dl>
+            <dl class="details">
+              <dt>Traffic</dt><dd id="tunnel-traffic">—</dd>
+              <dt>Endpoint</dt><dd id="tunnel-endpoint">—</dd>
+            </dl>
+          </div>
+       </div>
+      </section>
+
+      <!-- ===================== diagnose ===================== -->
+      <section id="page-diagnose" class="page" hidden>
+        <div class="card">
+          <h2>Diagnose a domain</h2>
+          <p class="hint">
+            Resolves each domain through your network's resolver and through DoH, probes
+            every address returned, and flags forced content restriction (such as YouTube
+            Restricted Mode). Tells you whether a problem is DNS before you change anything.
+          </p>
+          <textarea id="diag-input" rows="4" spellcheck="false" placeholder="One domain per line"></textarea>
+          <button id="diag-run" class="btn btn-primary btn-sm">Run diagnostic</button>
+          <div id="diag-results" class="diag-results"></div>
+        </div>
+      </section>
+
+      <!-- ===================== profiles ===================== -->
+      <section id="page-profiles" class="page" hidden>
+        <div class="card">
+          <div class="panel-head-inline">
+            <div>
+              <h2>Profiles <span class="tag tag-system">optional</span></h2>
+              <p class="hint">
+                You don't need any. Protection already covers every site and app. A
+                profile is for forcing specific domains over DoH when you narrow the
+                default policy, or for a one-click launch command.
+              </p>
+            </div>
+            <button id="add-profile" class="btn btn-ghost btn-sm">+ Add</button>
+          </div>
+          <div id="profile-list" class="profile-list"></div>
+        </div>
+
+        <div id="profile-editor" class="card editor" hidden>
+          <label class="field">
+            <span>Display name</span>
+            <input id="edit-name" type="text" />
+          </label>
+          <label class="field">
+            <span>Domains forced over DoH</span>
+            <textarea id="edit-domains" rows="5" spellcheck="false"
+              placeholder="One per line, e.g.&#10;login.example.com&#10;*.cdn.example.net"></textarea>
+          </label>
+          <p class="hint">A leading <code>*.</code> matches subdomains only. Only add domains you have actually observed.</p>
+          <div class="row">
+            <label class="field grow"><span>Launch command</span><input id="edit-command" type="text" placeholder="steam" /></label>
+            <label class="field grow"><span>Arguments</span><input id="edit-args" type="text" placeholder="-applaunch 12345" /></label>
+          </div>
+          <div class="row row-end">
+            <button id="delete-profile" class="btn btn-danger btn-sm">Delete</button>
+            <button id="launch-btn" class="btn btn-ghost btn-sm">Launch</button>
+            <button id="save-profile" class="btn btn-primary btn-sm">Save</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== settings ===================== -->
+      <section id="page-settings" class="page page-grid" hidden>
+       <div class="col-main">
+        <div class="card">
+          <h2>DoH providers</h2>
+          <p class="hint">Tried top to bottom — if one fails or is blocked, the next one answers.
+            Keep at least two from different companies.</p>
+          <div id="prov-list" class="app-list"></div>
+          <p class="hint" id="preset-hint">Add a preset:</p>
+          <div id="prov-presets" class="chips"></div>
+          <details class="custom-prov">
+            <summary>Add a custom provider</summary>
+            <div class="row">
+              <label class="field grow"><span>Name</span><input id="cp-name" type="text" placeholder="My resolver" /></label>
+              <label class="field grow"><span>DoH URL</span><input id="cp-url" type="text" placeholder="https://example.com/dns-query" /></label>
+            </div>
+            <label class="field"><span>Bootstrap IPs (comma separated)</span>
+              <input id="cp-boot" type="text" placeholder="1.2.3.4, 5.6.7.8" /></label>
+            <p class="hint">The provider's own IP addresses, so reaching it never depends on DNS.</p>
+            <button id="cp-add" class="btn btn-ghost btn-sm">Test &amp; add</button>
+          </details>
+        </div>
+
+        <div class="card">
+          <h2>Domain rules</h2>
+          <div class="two-col">
+            <label class="field">
+              <span>Always over DoH</span>
+              <textarea id="set-force-doh" rows="6" spellcheck="false" placeholder="One per line, e.g.&#10;youtube.com&#10;*.example.net"></textarea>
+            </label>
+            <label class="field">
+              <span>Always stay on your network</span>
+              <textarea id="set-force-local" rows="6" spellcheck="false" placeholder="One per line, e.g.&#10;intranet.mycollege.edu&#10;printer.home"></textarea>
+            </label>
+          </div>
+          <p class="hint">A domain covers its subdomains; a leading <code>*.</code> means subdomains only.
+            <code>.local</code>, <code>.lan</code>, <code>home.arpa</code>, single-word names and private-address
+            reverse lookups already stay local. Use the right-hand list for campus or company sites that only resolve on your network.</p>
+        </div>
+       </div>
+
+       <div class="col-side">
+        <div class="card">
+          <h2>Default route</h2>
+          <label class="choice">
+            <input type="radio" name="default-route" id="route-doh" />
+            <span><strong>Everything over DoH</strong> <span class="tag tag-doh">recommended</span><br />
+              <small>Every lookup is encrypted except the local ones.</small></span>
+          </label>
+          <label class="choice">
+            <input type="radio" name="default-route" id="route-local" />
+            <span><strong>Only listed domains over DoH</strong><br />
+              <small>Everything else uses your network's resolver as before.</small></span>
+          </label>
+        </div>
+
+        <div class="card">
+          <h2>Save</h2>
+          <p class="hint" id="settings-state">No unsaved changes.</p>
+          <div class="row">
+            <button id="settings-save" class="btn btn-primary btn-sm" disabled>Save settings</button>
+            <button id="settings-revert" class="btn btn-ghost btn-sm" disabled>Discard</button>
+          </div>
+          <p class="hint">Settings apply the next time DNS protection starts.</p>
+          <button id="settings-restart" class="btn btn-ghost btn-sm" hidden>Restart protection now</button>
+        </div>
+       </div>
+      </section>
+
+      <!-- ===================== details ===================== -->
+      <section id="page-about" class="page" hidden>
+        <div class="card">
+          <h2>Details</h2>
+          <dl class="details">
+            <dt>Listening on</dt><dd id="d-listen">—</dd>
+            <dt>Helper PID</dt><dd id="d-pid">—</dd>
+            <dt>DoH providers</dt><dd id="d-providers">—</dd>
+            <dt>Original resolvers</dt><dd id="d-upstreams">—</dd>
+            <dt>resolv.conf</dt><dd id="d-takeover">—</dd>
+            <dt>Active profile</dt><dd id="d-profile">—</dd>
+            <dt>Forced domains</dt><dd id="d-forced">—</dd>
+            <dt>Config file</dt><dd id="d-config">—</dd>
+          </dl>
+          <div class="notice update-card">
+            <strong>Updates</strong>
+            <span id="upd-text">Checking…</span>
+            <div class="row">
+              <button id="upd-run" class="btn btn-sm" hidden>Rebuild &amp; reinstall</button>
+              <button id="upd-restart" class="btn btn-primary btn-sm" hidden>Restart Detour</button>
+            </div>
+          </div>
+          <div class="notice">
+            <strong>What needs your password, and why.</strong>
+            DNS protection and the app tunnel ask through polkit: binding port 53,
+            writing <code>/etc/resolv.conf</code>, and creating a network interface all
+            require root. The original resolver file is backed up first and restored when
+            you stop. If the helper is killed, the next start restores it before anything else.
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
